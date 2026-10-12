@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -7,30 +8,25 @@ export default function Home() {
   const [shortUrl, setShortUrl] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  const handleSubmit = async ( e ) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setShortUrl("");
-
-    if (!url) {
-      setError("Please enter a URL");
-      return;
-    }
+    setCopied(false);
 
     try {
       setLoading(true);
 
       const response = await fetch(
-        "http://localhost:8000/shorten",
+        "https://url-shortener-backend-njbi.onrender.com/shorten",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            url: url,
-          }),
+          body: JSON.stringify({ url: url.trim() }),
         }
       );
 
@@ -38,24 +34,34 @@ export default function Home() {
 
       if (!response.ok) {
         throw new Error(
-          data.detail || "Something went wrong"
+          data.detail || "Failed to shorten URL"
         );
       }
 
+      if (!data.shortUrl) {
+        throw new Error("Short URL not received from backend");
+      }
+
       setShortUrl(data.shortUrl);
-    } 
-    catch (error) {
-      setError(error.message);
-    } 
-    finally {
+    } catch (err) {
+      setError(err.message || "Something went wrong");
+    } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <div className="w-full max-w-xl bg-white rounded-2xl shadow-lg p-8">
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(shortUrl);
+      setCopied(true);
+    } catch {
+      setError("Unable to copy URL. Please copy it manually.");
+    }
+  };
 
+  return (
+    <main className="min-h-screen flex items-center justify-center bg-gray-100 px-4 py-10">
+      <div className="w-full max-w-xl bg-white rounded-2xl shadow-lg p-8">
         <h1 className="text-3xl font-bold text-center mb-2">
           URL Shortener
         </h1>
@@ -65,7 +71,6 @@ export default function Home() {
         </p>
 
         <form onSubmit={handleSubmit}>
-
           <label className="block mb-2 font-medium">
             Enter your URL
           </label>
@@ -86,18 +91,16 @@ export default function Home() {
           >
             {loading ? "Shortening..." : "Shorten URL"}
           </button>
-
         </form>
 
         {error && (
-          <div className="mt-6 bg-red-100 text-red-700 p-4 rounded-lg">
+          <div className="mt-6 bg-red-100 text-red-700 p-4 rounded-lg break-all">
             {error}
           </div>
         )}
 
         {shortUrl && (
           <div className="mt-6 bg-green-100 p-4 rounded-lg">
-
             <p className="font-medium mb-2">
               Your Short URL:
             </p>
@@ -111,9 +114,15 @@ export default function Home() {
               {shortUrl}
             </a>
 
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="block mt-4 bg-green-700 text-white px-4 py-2 rounded-lg"
+            >
+              {copied ? "Copied!" : "Copy URL"}
+            </button>
           </div>
         )}
-
       </div>
     </main>
   );
