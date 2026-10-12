@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-
+import type { FormEvent, ChangeEvent } from "react";
 export default function Home() {
   const [url, setUrl] = useState("");
   const [shortUrl, setShortUrl] = useState("");
@@ -10,7 +10,9 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (
+  e: React.FormEvent<HTMLFormElement>
+) => {
     e.preventDefault();
     setError("");
     setShortUrl("");
@@ -44,7 +46,11 @@ export default function Home() {
 
       setShortUrl(data.shortUrl);
     } catch (err) {
-      setError(err.message || "Something went wrong");
+       if (err instanceof Error) {
+    setError(err.message);
+  } else {
+    setError("Something went wrong");
+  }
     } finally {
       setLoading(false);
     }
@@ -79,7 +85,9 @@ export default function Home() {
             type="url"
             required
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+  setUrl(e.target.value)
+}
             placeholder="https://example.com/very-long-url"
             className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
           />
